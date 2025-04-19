@@ -1,25 +1,24 @@
-import getCollection, { POSTS_COLLECTION } from "@/db";
+import getCollection, {POSTS_COLLECTION} from "@/db";
 import { NextResponse } from "next/server";
 
-export async function GET(
-    request: Request,
-    context: { params: { alias: string } }
-) {
-    const { alias } = context.params;
-    const baseUrl = new URL(request.url).origin;
-
+export async function GET(request: Request, {params}:{params: Promise<{alias:string}>}) {
+    const {alias} = await params;
     try {
+        // connect to mongodb and search for alias
         const collection = await getCollection(POSTS_COLLECTION);
-        const result = await collection.findOne({ alias });
-
-        if (!result) {
-            return NextResponse.redirect(`${baseUrl}/`);
+        const result = await collection.findOne({alias});
+        // if alias is not found return to home page
+        if (result === null) {
+            return NextResponse.redirect("/");
         }
-
         console.log("Redirecting to:", result.url);
-        return NextResponse.redirect(result.url);
+        // otherwise redirect to original long url
+        return NextResponse.redirect(result.url); 
+      
     } catch (err) {
+        // error handling
         console.error(err);
-        return NextResponse.redirect(`${baseUrl}/`);
+        return NextResponse.redirect("/"); 
     }
+    
 }
